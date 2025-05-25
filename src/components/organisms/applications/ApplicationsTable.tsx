@@ -1,7 +1,6 @@
 // src/components/applications/ApplicationsTable.tsx
 "use client";
-
-import { Eye, Edit, Trash2, Loader2 } from "lucide-react";
+import { Eye, Edit, Trash2, Loader2, Users } from "lucide-react";
 import Link from "next/link";
 import { Application } from "@/types/Application";
 
@@ -29,22 +28,24 @@ export default function ApplicationsTable({
       onDelete?.(id);
     }
   };
-
+  
   const getStatusClassName = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
         return 'bg-green-900/30 text-green-300';
+      case 'ready for testing':
+        return 'bg-blue-900/30 text-blue-300';
       case 'pending':
         return 'bg-yellow-900/30 text-yellow-300';
       case 'completed':
-        return 'bg-blue-900/30 text-blue-300';
+        return 'bg-purple-900/30 text-purple-300';
       case 'on-hold':
         return 'bg-red-900/30 text-red-300';
       default:
         return 'bg-gray-900/30 text-gray-300';
     }
   };
-
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -53,7 +54,7 @@ export default function ApplicationsTable({
       </div>
     );
   }
-
+  
   if (error) {
     return (
       <div className="bg-red-500/10 border border-red-500/50 text-red-300 p-4 rounded-lg text-center">
@@ -61,7 +62,7 @@ export default function ApplicationsTable({
       </div>
     );
   }
-
+  
   return (
     <div className="rounded-lg overflow-hidden shadow-xl">
       <table className="min-w-full divide-y divide-gray-700">
@@ -81,6 +82,9 @@ export default function ApplicationsTable({
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
               Status
             </th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              Testers
+            </th>
             {!hideActions && (
               <th className="px-6 py-4 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Actions
@@ -91,7 +95,7 @@ export default function ApplicationsTable({
         <tbody className="bg-gray-900 divide-y divide-gray-800">
           {data.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-6 py-10 text-center text-gray-400">
+              <td colSpan={showClientColumn ? 6 : 5} className="px-6 py-10 text-center text-gray-400">
                 No applications found.
               </td>
             </tr>
@@ -126,24 +130,38 @@ export default function ApplicationsTable({
                     {app.status}
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-300">
+                      {app.current_workers !== undefined 
+                        ? `${app.current_workers}/${app.max_testers}`
+                        : `0/${app.max_testers}`
+                      }
+                    </span>
+                  </div>
+                </td>
                 {!hideActions && (
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <div className="flex justify-end space-x-3">
                       <Link
                         href={`/client/application/${app.app_id}`}
                         className="text-gray-400 hover:text-blue-400 transition-colors"
+                        title="View Application"
                       >
                         <Eye className="w-5 h-5" />
                       </Link>
                       <Link
                         href={`/client/application/${app.app_id}/edit`}
                         className="text-gray-400 hover:text-yellow-400 transition-colors"
+                        title="Edit Application"
                       >
                         <Edit className="w-5 h-5" />
                       </Link>
                       <button
                         onClick={() => handleDelete(app.app_id)}
                         className="text-gray-400 hover:text-red-400 transition-colors"
+                        title="Delete Application"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

@@ -1,10 +1,10 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, Edit, Trash2, Loader2 } from "lucide-react";
 import { testCaseService } from "@/services/TestCaseService";
 import { TestCase } from "@/types/TestCase";
+import { PRIORITY_OPTIONS } from "@/constants";
 
 export default function TestCasesTable({ applicationId }: { applicationId?: string }) {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -35,15 +35,21 @@ export default function TestCasesTable({ applicationId }: { applicationId?: stri
     }
   };
   
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, qaId: string) => {
     if (confirm("Are you sure you want to delete this test case?")) {
       try {
-        await testCaseService.deleteTestCase(id);
+        await testCaseService.deleteTestCase(id, qaId);
         fetchTestCases();
       } catch (err) {
         console.error("Failed to delete test case:", err);
       }
     }
+  };
+  
+  // Helper function to get priority label
+  const getPriorityLabel = (value: string): string => {
+    const option = PRIORITY_OPTIONS.find(opt => opt.value === value);
+    return option ? option.label : value.charAt(0).toUpperCase() + value.slice(1);
   };
   
   if (isLoading) {
@@ -100,7 +106,7 @@ export default function TestCasesTable({ applicationId }: { applicationId?: stri
                     <div>
                       <div className="text-sm font-medium text-white">{testCase.test_title}</div>
                       <div className="text-xs text-gray-400 mt-1 truncate max-w-xs">
-                        {testCase.test_steps.split('\n')[0]}...
+                        <span className="font-medium text-blue-400">Given:</span> {testCase.given_context?.substring(0, 50) || 'N/A'}...
                       </div>
                     </div>
                   </div>
@@ -117,7 +123,7 @@ export default function TestCasesTable({ applicationId }: { applicationId?: stri
                     testCase.priority === 'Medium' ? 'bg-yellow-900/30 text-yellow-300' :
                     'bg-blue-900/30 text-blue-300'
                   }`}>
-                    {testCase.priority}
+                    {getPriorityLabel(testCase.priority)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -135,7 +141,7 @@ export default function TestCasesTable({ applicationId }: { applicationId?: stri
                       <Edit className="w-5 h-5" />
                     </Link>
                     <button
-                      onClick={() => handleDelete(testCase.test_id)}
+                      onClick={() => handleDelete(testCase.test_id, testCase.qa_id)}
                       className="text-gray-400 hover:text-red-400 transition-colors"
                     >
                       <Trash2 className="w-5 h-5" />

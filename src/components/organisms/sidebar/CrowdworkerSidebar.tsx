@@ -1,6 +1,5 @@
 // src/components/organisms/sidebar/CrowdworkerSidebar.tsx
 "use client";
-
 import { useState, useEffect } from "react";
 import { User, LogOut, ClipboardList, Search } from "lucide-react";
 import Link from "next/link";
@@ -8,28 +7,30 @@ import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 
 export default function CrowdworkerSidebar() {
-  const pathname = usePathname() || "/dashboard";
-  const [activePath, setActivePath] = useState(pathname);
+  const pathname = usePathname();
+  const [activePath, setActivePath] = useState("/crowdworker/dashboard");
   const [loggingOut, setLoggingOut] = useState(false);
   const { logout } = useAuth();
-
+  
   // Update active path when pathname changes
   useEffect(() => {
-    setActivePath(pathname);
+    if (pathname) {
+      setActivePath(pathname);
+    }
   }, [pathname]);
-
+  
   const handleNavigate = (path: string) => {
     setActivePath(path);
   };
-
+  
   const handleLogout = () => {
     setLoggingOut(true);
     // Call the actual logout function
     logout();
   };
-
+  
   const isActive = (path: string) => activePath.includes(path);
-
+  
   return (
     <aside className="bg-[#001333] h-screen text-white col-span-2 flex flex-col justify-between shadow-xl overflow-y-auto fixed w-64">
       <div>
@@ -112,7 +113,6 @@ export default function CrowdworkerSidebar() {
           </ul>
         </nav>
       </div>
-
       <div className="pb-4 px-2 mt-auto">
         <button
           onClick={handleLogout}

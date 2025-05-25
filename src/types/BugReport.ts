@@ -1,5 +1,6 @@
 // src/types/BugReport.ts
 import { BugSeverity } from "@/constants";
+import { TestEvidence } from "./TestEvidence";
 
 export interface BugReport {
   bug_id: string;
@@ -8,10 +9,16 @@ export interface BugReport {
   bug_description: string;
   steps_to_reproduce: string;
   severity: BugSeverity;
-  screenshot_url?: string;
+  screenshot_url?: string; // Keep for backward compatibility
   created_at: string;
   updated_at: string;
-  // Remove validation_status directly on the bug report as it doesn't exist in your model
+  // Add revision tracking fields
+  is_revision: boolean;
+  revision_number: number;
+  original_bug_id?: string;
+  // Add evidence collection
+  evidence?: TestEvidence[];
+  // Relationships
   uat_task?: {
     task_id: string;
     task_title: string;
@@ -38,6 +45,9 @@ export interface BugReport {
       name: string;
     };
   };
+  // For revision relationships
+  original_bug_report?: BugReport;
+  revisions?: BugReport[];
 }
 
 export interface CreateBugReportData {
@@ -46,7 +56,23 @@ export interface CreateBugReportData {
   bug_description: string;
   steps_to_reproduce: string;
   severity: BugSeverity;
-  screenshot_url?: string;
+  screenshot_url?: string; // Keep for backward compatibility
 }
 
-export interface UpdateBugReportData extends Partial<CreateBugReportData> {}
+export interface CreateBugRevisionData {
+  original_bug_id: string;
+  bug_description: string;
+  steps_to_reproduce: string;
+  severity: BugSeverity;
+  screenshot_url?: string; // Keep for backward compatibility
+}
+
+// Update this interface to allow null values for steps_to_reproduce
+export interface UpdateBugReportData {
+  task_id?: string;
+  worker_id?: string;
+  bug_description?: string;
+  steps_to_reproduce?: string | null;  // Allow null here
+  severity?: BugSeverity;
+  screenshot_url?: string;
+}

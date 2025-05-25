@@ -42,6 +42,13 @@ export default function MyApplicationsPage() {
   const [workerId, setWorkerId] = useState<string | undefined>(undefined);
   const [appProgress, setAppProgress] = useState<AppProgressMap>({});
 
+  // Function to check if an application is complete
+  const isApplicationComplete = (appId: string) => {
+    if (!appProgress[appId]) return false;
+    return appProgress[appId].total > 0 && 
+           appProgress[appId].completed === appProgress[appId].total;
+  };
+
   // Only set the workerId when user data is fully loaded and user is a crowdworker
   useEffect(() => {
     if (!authLoading && user) {
@@ -91,7 +98,8 @@ export default function MyApplicationsPage() {
             
             progressMap[appData.app_id].total++;
             
-            if (task.status === 'Completed') {
+            // Count both Completed and Verified statuses as "completed"
+            if (task.status === 'Completed' || task.status === 'Verified') {
               progressMap[appData.app_id].completed++;
             } else if (task.status === 'In Progress') {
               progressMap[appData.app_id].inProgress++;
@@ -188,11 +196,12 @@ export default function MyApplicationsPage() {
                         <span className="text-xs text-gray-400">Testing Progress</span>
                         <span className="text-xs text-gray-400">
                           {appProgress[app.app_id].completed}/{appProgress[app.app_id].total} Tests
+                          {isApplicationComplete(app.app_id) && " (Completed)"}
                         </span>
                       </div>
                       <div className="w-full bg-[#0a1e3b] rounded-full h-2">
                         <div 
-                          className="bg-[#5460ff] h-2 rounded-full" 
+                          className={`h-2 rounded-full ${isApplicationComplete(app.app_id) ? 'bg-green-500' : 'bg-[#5460ff]'}`} 
                           style={{ 
                             width: appProgress[app.app_id].total 
                               ? `${(appProgress[app.app_id].completed / appProgress[app.app_id].total) * 100}%` 
@@ -206,12 +215,13 @@ export default function MyApplicationsPage() {
                   {app.status && (
                     <div className="mb-2">
                       <span className={`px-2 py-1 rounded text-xs ${
+                        isApplicationComplete(app.app_id) ? 'bg-green-500/20 text-green-300' :
                         app.status === 'active' ? 'bg-green-500/20 text-green-300' :
                         app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
                         app.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
                         'bg-red-500/20 text-red-300'
                       }`}>
-                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                        {isApplicationComplete(app.app_id) ? 'Completed' : app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                       </span>
                     </div>
                   )}
@@ -240,9 +250,13 @@ export default function MyApplicationsPage() {
                   </Link>
                   <Link
                     href={`/crowdworker/applications/${app.app_id}/tasks`}
-                    className="flex-1 text-center px-3 py-2 bg-[#5460ff] text-white rounded-md hover:bg-[#4450dd] font-medium text-sm"
+                    className={`flex-1 text-center px-3 py-2 rounded-md font-medium text-sm ${
+                      isApplicationComplete(app.app_id) 
+                        ? 'bg-green-500/60 text-white hover:bg-green-500/80' 
+                        : 'bg-[#5460ff] text-white hover:bg-[#4450dd]'
+                    }`}
                   >
-                    Continue Testing
+                    {isApplicationComplete(app.app_id) ? 'View Results' : 'Continue Testing'}
                   </Link>
                 </div>
               </div>

@@ -1,7 +1,8 @@
 // src/types/UATTask.ts
-
 import { UATTaskStatus } from '@/constants';
 import { TestCase } from './TestCase';
+import { BugReport } from './BugReport';
+import { TestEvidence } from './TestEvidence';
 
 export interface UATTask {
   task_id: string;
@@ -13,8 +14,17 @@ export interface UATTask {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  // New revision tracking fields
+  revision_count?: number;
+  revision_status?: string; // 'None', 'Requested', 'In Progress', 'Completed'
+  revision_comments?: string | null;
+  last_revised_at?: string | null;
+  // Original fields
   duration?: number;
   bug_reports_count?: number;
+  // Add evidence collection
+  evidence?: TestEvidence[];
+  evidence_count?: number;
   application?: {
     app_id: string;
     app_name: string;
@@ -26,15 +36,16 @@ export interface UATTask {
     name: string;
     email: string;
   };
-  bug_reports?: Array<{
-    bug_id: string;
-    title?: string;
-    severity: string;
-    steps_to_reproduce?: string;
-    bug_description?: string; 
-    created_at?: string;
-    validation_status?: string;
-  }>;
+  // Use the full BugReport type instead of a limited inline type
+  bug_reports?: BugReport[];
+  task_validation?: {
+    validation_id: string;
+    task_id: string;
+    qa_id: string;
+    validation_status: string;
+    comments?: string;
+    validated_at: string;
+  };
 }
 
 export interface CreateUATTaskData {

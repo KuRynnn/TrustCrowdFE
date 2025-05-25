@@ -102,8 +102,8 @@ export function useApplicationList(clientId?: string, platform?: string) {
   };
 }
 
-// Hook for fetching a single application details
-export function useApplicationDetail(id: string) {
+// Modified hook for fetching a single application details
+export function useApplicationDetail(id: string, workerId?: string) {
   const [application, setApplication] = useState<Application | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -149,7 +149,10 @@ export function useApplicationDetail(id: string) {
   const fetchProgress = useCallback(async () => {
     try {
       setIsLoadingProgress(true);
-      const data = await applicationService.getApplicationProgress(id);
+      // Pass worker_id as a parameter if available
+      const data = workerId 
+        ? await applicationService.getApplicationProgressForWorker(id, workerId)
+        : await applicationService.getApplicationProgress(id);
       setProgress(data);
       setProgressError(null);
     } catch (err) {
@@ -157,7 +160,7 @@ export function useApplicationDetail(id: string) {
     } finally {
       setIsLoadingProgress(false);
     }
-  }, [id]);
+  }, [id, workerId]); // Add workerId as dependency
   
   const fetchFinalReport = useCallback(async (clientId?: string) => {
     try {
@@ -175,7 +178,7 @@ export function useApplicationDetail(id: string) {
   useEffect(() => {
     fetchApplication();
     fetchStatistics();
-    fetchProgress();
+    fetchProgress(); // This will now use workerId if available
   }, [fetchApplication, fetchStatistics, fetchProgress]);
 
   const updateApplication = async (data: UpdateApplicationData) => {

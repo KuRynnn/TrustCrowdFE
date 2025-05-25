@@ -1,3 +1,4 @@
+// src/services/TaskValidationService.ts
 import apiClient from '@/lib/ApiClient';
 import { 
   TaskValidation, 
@@ -6,7 +7,7 @@ import {
   TaskReadinessResponse
 } from '@/types/TaskValidation';
 
-export const TaskValidationService = {
+const TaskValidationService = {
   /**
    * Create a new task validation
    * @param data Task validation data
@@ -14,7 +15,8 @@ export const TaskValidationService = {
    */
   createTaskValidation: async (data: CreateTaskValidationRequest): Promise<TaskValidation> => {
     try {
-      const response = await apiClient.post<TaskValidationResponse>('/task-validations', data);
+      // Use /task-validations/validate instead of /task-validations
+      const response = await apiClient.post<TaskValidationResponse>('/task-validations/validate', data);
       return response.data.data;
     } catch (error) {
       console.error('Error creating task validation:', error);
@@ -29,7 +31,7 @@ export const TaskValidationService = {
    */
   getTaskValidation: async (taskId: string): Promise<TaskValidation> => {
     try {
-      const response = await apiClient.get<TaskValidationResponse>(`/task-validations/${taskId}`);
+      const response = await apiClient.get<TaskValidationResponse>(`/task-validations/task/${taskId}`);
       return response.data.data;
     } catch (error) {
       console.error('Error getting task validation:', error);

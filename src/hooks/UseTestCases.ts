@@ -2,12 +2,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { testCaseService } from '@/services/TestCaseService';
 import { TestCase, CreateTestCaseData, UpdateTestCaseData, TestCaseStatistics } from '@/types/TestCase';
+import { useAuth } from '@/context/AuthContext'; // Import Auth context to get current user
 
 // Hook for fetching test cases list
 export function useTestCaseList(appId?: string, qaId?: string, priority?: string) {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth(); // Get current user to access qa_id if needed
 
   const fetchTestCases = useCallback(async () => {
     try {
@@ -39,7 +41,13 @@ export function useTestCaseList(appId?: string, qaId?: string, priority?: string
 
   const createTestCase = async (data: CreateTestCaseData) => {
     try {
-      await testCaseService.createTestCase(data);
+      // Ensure priority is lowercase before sending to API
+      const formattedData = {
+        ...data,
+        priority: data.priority.toLowerCase() as any
+      };
+      
+      await testCaseService.createTestCase(formattedData);
       fetchTestCases(); // Refetch after creation
       return { success: true };
     } catch (err) {
@@ -52,7 +60,13 @@ export function useTestCaseList(appId?: string, qaId?: string, priority?: string
 
   const updateTestCase = async (id: string, data: UpdateTestCaseData) => {
     try {
-      await testCaseService.updateTestCase(id, data);
+      // Ensure priority is lowercase before sending to API if it exists
+      const formattedData = {
+        ...data,
+        priority: data.priority ? data.priority.toLowerCase() as any : undefined
+      };
+      
+      await testCaseService.updateTestCase(id, formattedData);
       fetchTestCases(); // Refetch after update
       return { success: true };
     } catch (err) {
@@ -63,9 +77,27 @@ export function useTestCaseList(appId?: string, qaId?: string, priority?: string
     }
   };
 
-  const deleteTestCase = async (id: string) => {
+  const deleteTestCase = async (id: string, qaId?: string) => {
     try {
-      await testCaseService.deleteTestCase(id);
+      // First, try to use the provided qaId
+      if (qaId) {
+        await testCaseService.deleteTestCase(id, qaId);
+      } 
+      // If not provided, try to find qaId from the test case itself
+      else {
+        const testCase = testCases.find(tc => tc.test_id === id);
+        if (testCase && testCase.qa_id) {
+          await testCaseService.deleteTestCase(id, testCase.qa_id);
+        }
+        // If still not found, use the current user's qa_id if they are a QA specialist
+        else if (user && user.role === 'qa_specialist' && user.qa_id) {
+          await testCaseService.deleteTestCase(id, user.qa_id);
+        }
+        else {
+          throw new Error('QA Specialist ID required to delete test case');
+        }
+      }
+      
       fetchTestCases(); // Refetch after deletion
       return { success: true };
     } catch (err) {
@@ -92,6 +124,7 @@ export function useTestCaseDetail(id: string) {
   const [testCase, setTestCase] = useState<TestCase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth(); // Get current user for qa_id if needed
   
   const [statistics, setStatistics] = useState<TestCaseStatistics | null>(null);
   const [isLoadingStatistics, setIsLoadingStatistics] = useState(true);
@@ -130,13 +163,54 @@ export function useTestCaseDetail(id: string) {
 
   const updateTestCase = async (data: UpdateTestCaseData) => {
     try {
-      await testCaseService.updateTestCase(id, data);
+      // Ensure priority is lowercase before sending to API if it exists
+      const formattedData = {
+        ...data,
+        priority: data.priority ? data.priority.toLowerCase() as any : undefined
+      };
+      
+      // Pass qa_id if available in the test case
+      if (testCase && testCase.qa_id) {
+        await testCaseService.updateTestCase(id, {
+          ...formattedData,
+          qa_id: testCase.qa_id
+        });
+      } else if (user && user.role === 'qa_specialist' && user.qa_id) {
+        // Use the current user's qa_id if they are a QA specialist
+        await testCaseService.updateTestCase(id, {
+          ...formattedData,
+          qa_id: user.qa_id
+        });
+      } else {
+        throw new Error('QA Specialist ID required to update test case');
+      }
+      
       fetchTestCase(); // Refetch after update
       return { success: true };
     } catch (err) {
       return { 
         success: false, 
         error: err instanceof Error ? err : new Error('Failed to update test case') 
+      };
+    }
+  };
+
+  const deleteTestCase = async () => {
+    try {
+      if (testCase && testCase.qa_id) {
+        await testCaseService.deleteTestCase(id, testCase.qa_id);
+        return { success: true };
+      } else if (user && user.role === 'qa_specialist' && user.qa_id) {
+        // Use the current user's qa_id if they are a QA specialist
+        await testCaseService.deleteTestCase(id, user.qa_id);
+        return { success: true };
+      } else {
+        throw new Error('QA Specialist ID required to delete test case');
+      }
+    } catch (err) {
+      return { 
+        success: false, 
+        error: err instanceof Error ? err : new Error('Failed to delete test case') 
       };
     }
   };
@@ -149,6 +223,7 @@ export function useTestCaseDetail(id: string) {
     isLoadingStatistics,
     statisticsError,
     fetchTestCase,
-    updateTestCase
+    updateTestCase,
+    deleteTestCase
   };
 }

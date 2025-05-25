@@ -1,6 +1,5 @@
 // src/app/qa-specialist/applications/[id]/page.tsx
 "use client";
-
 import { useParams, useRouter } from 'next/navigation';
 import { useApplicationDetail } from '@/hooks/UseApplications';
 import Link from 'next/link';
@@ -22,10 +21,10 @@ export default function QAApplicationDetailPage() {
     progress,
     isLoadingProgress
   } = useApplicationDetail(id as string);
-
+  
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
+  
   const handleDeleteTestCase = async (testId: string) => {
     if (!confirm("Are you sure you want to delete this test case?")) return;
     
@@ -55,7 +54,13 @@ export default function QAApplicationDetailPage() {
       setDeletingId(null);
     }
   };
-
+  
+  // Format priority with capitalized first letter
+  const formatPriority = (priority: string): string => {
+    if (!priority) return '';
+    return priority.charAt(0).toUpperCase() + priority.slice(1);
+  };
+  
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-[#0e0b1e] flex items-center justify-center">
@@ -66,7 +71,7 @@ export default function QAApplicationDetailPage() {
       </div>
     );
   }
-
+  
   if (error) {
     return (
       <div className="flex min-h-screen bg-[#0e0b1e]">
@@ -91,7 +96,7 @@ export default function QAApplicationDetailPage() {
       </div>
     );
   }
-
+  
   if (!application) {
     return (
       <div className="flex min-h-screen bg-[#0e0b1e]">
@@ -107,12 +112,12 @@ export default function QAApplicationDetailPage() {
       </div>
     );
   }
-
+  
   // Check if user is a QA specialist
   const isQASpecialist = user?.role === "qa_specialist";
   // Safely access qa_id only if user is a QA specialist
   const currentQaId = isQASpecialist && user ? user.qa_id : null;
-
+  
   return (
     <div className="flex min-h-screen bg-[#0e0b1e]">
       {/* Sidebar */}
@@ -124,7 +129,6 @@ export default function QAApplicationDetailPage() {
       <div className="flex-1 text-white p-6">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">{application.app_name}</h1>
-
           <Link
             href="/qa-specialist/applications"
             className="px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700"
@@ -132,13 +136,13 @@ export default function QAApplicationDetailPage() {
             Back to List
           </Link>
         </div>
-
+        
         {deleteError && (
           <div className="bg-red-900/50 text-red-400 p-3 rounded-lg mb-4">
             {deleteError}
           </div>
         )}
-
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-[#1a1a2e] p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4 text-gray-200">Application Details</h2>
@@ -185,7 +189,7 @@ export default function QAApplicationDetailPage() {
               </div>
             </dl>
           </div>
-
+          
           <div className="bg-[#1a1a2e] p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4 text-gray-200">Testing Progress</h2>
             {isLoadingProgress ? (
@@ -201,48 +205,147 @@ export default function QAApplicationDetailPage() {
                     <div className="bg-[#4c0e8f] h-2 rounded-full" style={{ width: `${progress.percentage || 0}%` }}></div>
                   </div>
                 </div>
-                <dl className="grid grid-cols-2 gap-4 mt-4">
-                  <div><dt className="text-gray-400 text-sm">Test Cases</dt><dd className="text-2xl font-bold text-white">{progress.total_test_cases || 0}</dd></div>
-                  <div><dt className="text-gray-400 text-sm">Completed</dt><dd className="text-2xl font-bold text-green-300">{progress.completed_test_cases || 0}</dd></div>
-                  <div><dt className="text-gray-400 text-sm">In Progress</dt><dd className="text-2xl font-bold text-yellow-300">{progress.in_progress_test_cases || 0}</dd></div>
-                  <div><dt className="text-gray-400 text-sm">Not Started</dt><dd className="text-2xl font-bold text-gray-300">{progress.not_started_test_cases || 0}</dd></div>
-                </dl>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="bg-[#212145] p-3 rounded">
+                    <h3 className="text-sm text-gray-300 mb-2">UAT Tasks Status</h3>
+                    <dl className="grid grid-cols-2 gap-y-2 gap-x-4">
+                      <dt className="text-gray-400 text-sm">Total</dt>
+                      <dd className="text-white font-semibold">{progress.tasks_by_status?.total || 0}</dd>
+                      
+                      <dt className="text-gray-400 text-sm">Assigned</dt>
+                      <dd className="text-white">{progress.tasks_by_status?.assigned || 0}</dd>
+                      
+                      <dt className="text-gray-400 text-sm">In Progress</dt>
+                      <dd className="text-yellow-300">{progress.tasks_by_status?.in_progress || 0}</dd>
+                      
+                      <dt className="text-gray-400 text-sm">Completed</dt>
+                      <dd className="text-blue-300">{progress.tasks_by_status?.completed || 0}</dd>
+                      
+                      <dt className="text-gray-400 text-sm">Revision Required</dt>
+                      <dd className="text-orange-300">{progress.tasks_by_status?.revision_required || 0}</dd>
+                      
+                      <dt className="text-gray-400 text-sm">Verified</dt>
+                      <dd className="text-green-300">{progress.tasks_by_status?.verified || 0}</dd>
+                      
+                      <dt className="text-gray-400 text-sm">Rejected</dt>
+                      <dd className="text-red-300">{progress.tasks_by_status?.rejected || 0}</dd>
+                    </dl>
+                  </div>
+                  
+                  <div className="bg-[#212145] p-3 rounded">
+                    <h3 className="text-sm text-gray-300 mb-2">Participation</h3>
+                    <dl className="grid grid-cols-1 gap-y-2">
+                      <div>
+                        <dt className="text-gray-400 text-sm">Test Cases</dt>
+                        <dd className="text-white font-semibold">{progress.total_test_cases || 0}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-gray-400 text-sm">Crowdworkers</dt>
+                        <dd className="text-white font-semibold">{progress.total_crowdworkers || 0}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-gray-400 text-sm">Total Possible Tasks</dt>
+                        <dd className="text-white">
+                          {progress.total_possible_tasks || 0} 
+                          <span className="text-xs text-gray-400 ml-1">
+                            ({progress.total_crowdworkers || 0} × {progress.total_test_cases || 0})
+                          </span>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
               </div>
             ) : (
               <p className="text-center py-4 text-gray-400">No progress data available</p>
             )}
           </div>
         </div>
-
+        
         <div className="bg-[#1a1a2e] p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">Testing Statistics</h2>
           {isLoadingStatistics ? (
             <p className="text-center py-4">Loading statistics...</p>
-          ) : statistics ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-[#212145] p-4 rounded-lg text-center">
-                <p className="text-gray-400 text-sm">Bug Reports</p>
-                <p className="text-2xl font-bold text-white">{statistics.total_bug_reports || 0}</p>
+          ) : statistics && statistics.summary ? (
+            <div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                <div className="bg-[#212145] p-4 rounded-lg text-center">
+                  <p className="text-gray-400 text-sm">Total Bugs</p>
+                  <p className="text-2xl font-bold text-white">{statistics.summary.total_bugs || 0}</p>
+                </div>
+                <div className="bg-[#212145] p-4 rounded-lg text-center">
+                  <p className="text-gray-400 text-sm">Critical Bugs</p>
+                  <p className="text-2xl font-bold text-red-300">{statistics.summary.critical_bugs || 0}</p>
+                </div>
+                <div className="bg-[#212145] p-4 rounded-lg text-center">
+                  <p className="text-gray-400 text-sm">Valid Bugs</p>
+                  <p className="text-2xl font-bold text-green-300">{statistics.summary.valid_bugs || 0}</p>
+                </div>
+                <div className="bg-[#212145] p-4 rounded-lg text-center">
+                  <p className="text-gray-400 text-sm">Pending Validation</p>
+                  <p className="text-2xl font-bold text-yellow-300">{statistics.summary.pending_validation || 0}</p>
+                </div>
               </div>
-              <div className="bg-[#212145] p-4 rounded-lg text-center">
-                <p className="text-gray-400 text-sm">Critical Bugs</p>
-                <p className="text-2xl font-bold text-red-300">{statistics.critical_bugs || 0}</p>
-              </div>
-              <div className="bg-[#212145] p-4 rounded-lg text-center">
-                <p className="text-gray-400 text-sm">Validated Bugs</p>
-                <p className="text-2xl font-bold text-green-300">{statistics.validated_bugs || 0}</p>
-              </div>
-              <div className="bg-[#212145] p-4 rounded-lg text-center">
-                <p className="text-gray-400 text-sm">Testers</p>
-                <p className="text-2xl font-bold text-blue-300">{statistics.total_testers || 0}</p>
-              </div>
+              
+              {statistics.test_case_statistics && statistics.test_case_statistics.length > 0 && (
+                <div className="mt-6 overflow-x-auto">
+                  <h3 className="text-lg font-medium text-gray-200 mb-3">Test Case Statistics</h3>
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#212145]">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Test Case</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Priority</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Crowdworkers</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Total Bugs</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Critical</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">High</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Medium</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Low</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Valid</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Invalid</th>
+                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Pending</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {statistics.test_case_statistics.map((tc) => (
+                        <tr 
+                          key={tc.test_id} 
+                          className={`hover:bg-[#212145]/50 ${tc.critical_bugs > 0 ? 'bg-red-900/10' : ''}`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap">{tc.test_title}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              tc.priority.toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
+                              tc.priority.toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                              'bg-blue-500/20 text-blue-300'
+                            }`}>
+                              {tc.priority}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">{tc.crowdworkers_count}</td>
+                          <td className="px-4 py-3 text-center font-medium">{tc.total_bugs}</td>
+                          <td className="px-4 py-3 text-center text-red-300 font-medium">{tc.critical_bugs}</td>
+                          <td className="px-4 py-3 text-center text-orange-300">{tc.high_bugs}</td>
+                          <td className="px-4 py-3 text-center text-yellow-300">{tc.medium_bugs}</td>
+                          <td className="px-4 py-3 text-center text-blue-300">{tc.low_bugs}</td>
+                          <td className="px-4 py-3 text-center text-green-300">{tc.valid_bugs}</td>
+                          <td className="px-4 py-3 text-center text-gray-400">{tc.invalid_bugs}</td>
+                          <td className="px-4 py-3 text-center text-yellow-300">{tc.pending_validation}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-center py-4 text-gray-400">No statistics available</p>
           )}
         </div>
-
-        <div className="flex justify-between items-center">
+        
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-200">Test Cases</h2>
           <Link
             href={`/qa-specialist/applications/${id}/test-cases/new`}
@@ -251,64 +354,91 @@ export default function QAApplicationDetailPage() {
             Add Test Case
           </Link>
         </div>
-
-        <div className="mt-4 bg-[#1a1a2e] p-6 rounded-lg shadow-md">
-          {application.test_cases?.length ? (
-            <ul className="space-y-4">
-              {application.test_cases.map(tc => {
-                // Check if current user owns this test case
-                const isOwner = isQASpecialist && currentQaId && tc.qa_id === currentQaId;
-                
-                return (
-                  <li key={tc.test_id} className="text-white border-b border-gray-700 pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <Link href={`/qa-specialist/applications/${id}/test-cases/${tc.test_id}`} className="hover:underline">
-                          <h3 className="font-semibold text-lg">{tc.test_title}</h3>
-                        </Link>
-                        {tc.test_steps && (
-                          <p className="text-sm text-gray-300 whitespace-pre-wrap mt-1">{tc.test_steps.slice(0, 100)}{tc.test_steps.length > 100 ? '...' : ''}</p>
-                        )}
-                        <div className="flex gap-2 mt-2 text-xs">
-                          <span className={`px-2 py-1 rounded ${
-                            tc.priority === 'High' ? 'bg-red-500/20 text-red-300' :
-                            tc.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' :
-                            'bg-blue-500/20 text-blue-300'
-                          }`}>
-                            {tc.priority}
-                          </span>
-                          
-                          <span className="text-gray-400">
-                            Created by: {isOwner ? 'You' : (tc.qa_specialist?.name || 'Unknown QA Specialist')}
-                          </span>
-                        </div>
+        
+        {application.test_cases?.length ? (
+          <div className="space-y-6">
+            {application.test_cases.map(tc => {
+              // Check if current user owns this test case
+              const isOwner = isQASpecialist && currentQaId && tc.qa_id === currentQaId;
+              
+              return (
+                <div key={tc.test_id} className="bg-[#1a1a2e] rounded-lg shadow-md border border-gray-700 overflow-hidden">
+                  {/* Test case header */}
+                  <div className="bg-[#212145] p-4 flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-lg">{tc.test_title}</h3>
+                      <div className="flex gap-2 mt-2 text-xs">
+                        <span className={`px-2 py-1 rounded ${
+                          tc.priority === 'high' || tc.priority === 'High' ? 'bg-red-500/20 text-red-300' :
+                          tc.priority === 'medium' || tc.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-blue-500/20 text-blue-300'
+                        }`}>
+                          {formatPriority(tc.priority)}
+                        </span>
+                        
+                        <span className="text-gray-400">
+                          Created by: {isOwner ? 'You' : (tc.qa_specialist?.name || 'Unknown QA Specialist')}
+                        </span>
                       </div>
-                      {isOwner && (
-                        <div className="flex flex-col items-end space-y-2">
-                          <Link
-                            href={`/qa-specialist/applications/${id}/test-cases/${tc.test_id}/edit`}
-                            className="text-sm text-blue-400 hover:underline"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteTestCase(tc.test_id)}
-                            disabled={deletingId === tc.test_id}
-                            className="text-sm text-red-400 hover:underline disabled:opacity-50"
-                          >
-                            {deletingId === tc.test_id ? "Deleting..." : "Delete"}
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
+                    
+                    {isOwner && (
+                      <div className="flex space-x-3">
+                        <Link
+                          href={`/qa-specialist/applications/${id}/test-cases/${tc.test_id}/edit`}
+                          className="text-sm text-blue-400 hover:underline"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteTestCase(tc.test_id)}
+                          disabled={deletingId === tc.test_id}
+                          className="text-sm text-red-400 hover:underline disabled:opacity-50"
+                        >
+                          {deletingId === tc.test_id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* GWT Format */}
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-start">
+                      <div className="w-20 h-8 bg-blue-900/30 flex items-center justify-center rounded-md">
+                        <span className="text-blue-400 font-medium text-sm">GIVEN</span>
+                      </div>
+                      <div className="ml-4 text-gray-300 flex-grow">
+                        <div className="whitespace-pre-wrap">{tc.given_context || 'No context provided'}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <div className="w-20 h-8 bg-green-900/30 flex items-center justify-center rounded-md">
+                        <span className="text-green-400 font-medium text-sm">WHEN</span>
+                      </div>
+                      <div className="ml-4 text-gray-300 flex-grow">
+                        <div className="whitespace-pre-wrap">{tc.when_action || 'No actions provided'}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <div className="w-20 h-8 bg-purple-900/30 flex items-center justify-center rounded-md">
+                        <span className="text-purple-400 font-medium text-sm">THEN</span>
+                      </div>
+                      <div className="ml-4 text-gray-300 flex-grow">
+                        <div className="whitespace-pre-wrap">{tc.then_result || 'No expected results provided'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-[#1a1a2e] p-6 rounded-lg shadow-md text-center">
             <p className="text-gray-400">No test cases created yet.</p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

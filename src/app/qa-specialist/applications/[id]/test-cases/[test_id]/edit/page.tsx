@@ -1,6 +1,5 @@
 // src/app/qa-specialist/applications/[id]/test-cases/[test_id]/edit/page.tsx
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -13,14 +12,13 @@ export default function EditTestCasePage() {
   const { id: app_id, test_id } = useParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-
   const [form, setForm] = useState({
     test_title: "",
-    test_steps: "",
-    expected_result: "",
+    given_context: "",
+    when_action: "",
+    then_result: "",
     priority: "Medium" as TestCasePriority,
   });
-
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +31,9 @@ export default function EditTestCasePage() {
         setTestCase(testCase);
         setForm({
           test_title: testCase.test_title,
-          test_steps: testCase.test_steps,
-          expected_result: testCase.expected_result,
+          given_context: testCase.given_context,
+          when_action: testCase.when_action,
+          then_result: testCase.then_result,
           priority: testCase.priority,
         });
         
@@ -109,7 +108,7 @@ export default function EditTestCasePage() {
       </div>
     );
   }
-
+  
   // Check if user is the owner using conditional logic
   const isOwner = user?.role === 'qa_specialist' && user.qa_id === testCase?.qa_id;
 
@@ -123,7 +122,6 @@ export default function EditTestCasePage() {
       {/* Main content */}
       <div className="flex-1 text-white p-6">
         <h1 className="text-2xl font-bold text-white mb-6">Edit Test Case</h1>
-
         {error && (
           <div className="bg-red-900/50 text-red-400 p-4 mb-4 rounded-lg">
             {error}
@@ -139,7 +137,6 @@ export default function EditTestCasePage() {
             )}
           </div>
         )}
-
         {(!error || !error.includes("permission")) && (
           <form onSubmit={handleSubmit} className="space-y-6 bg-[#1a1a2e] p-6 rounded-lg shadow-md">
             <div>
@@ -153,31 +150,55 @@ export default function EditTestCasePage() {
                 className="w-full px-4 py-2 rounded bg-[#212145] text-white border border-gray-600"
               />
             </div>
-
+            
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Test Steps</label>
+              <label className="block text-sm text-gray-300 mb-1">Given Context</label>
               <textarea
-                name="test_steps"
-                value={form.test_steps}
-                onChange={handleChange}
-                required
-                rows={5}
-                className="w-full px-4 py-2 rounded bg-[#212145] text-white border border-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-300 mb-1">Expected Result</label>
-              <textarea
-                name="expected_result"
-                value={form.expected_result}
+                name="given_context"
+                value={form.given_context}
                 onChange={handleChange}
                 required
                 rows={3}
+                placeholder="The initial state or context of the system before testing"
                 className="w-full px-4 py-2 rounded bg-[#212145] text-white border border-gray-600"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Describe the state or context before the test actions are performed.
+              </p>
             </div>
-
+            
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">When Action</label>
+              <textarea
+                name="when_action"
+                value={form.when_action}
+                onChange={handleChange}
+                required
+                rows={5}
+                placeholder="1. User clicks on login button&#10;2. User enters credentials&#10;3. User submits the form"
+                className="w-full px-4 py-2 rounded bg-[#212145] text-white border border-gray-600"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Describe the actions that the user will perform during testing.
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">Then Result</label>
+              <textarea
+                name="then_result"
+                value={form.then_result}
+                onChange={handleChange}
+                required
+                rows={3}
+                placeholder="1. User should be redirected to dashboard&#10;2. Success message should be displayed"
+                className="w-full px-4 py-2 rounded bg-[#212145] text-white border border-gray-600"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Describe the expected results after the actions are performed.
+              </p>
+            </div>
+            
             <div>
               <label className="block text-sm text-gray-300 mb-1">Priority</label>
               <select
@@ -191,7 +212,7 @@ export default function EditTestCasePage() {
                 <option value="High">High</option>
               </select>
             </div>
-
+            
             <div className="flex justify-end">
               <button
                 type="submit"

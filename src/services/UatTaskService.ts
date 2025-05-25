@@ -87,5 +87,16 @@ export const uatTaskService = {
   getBugReports: async (id: string): Promise<any[]> => {
     const response = await apiClient.get(`/uat-tasks/${id}/bug-reports`);
     return response.data.data;
-  }
+  },
+
+  // Add these new methods
+  getTaskRevisionHistory: async (id: string): Promise<any> => {
+    const response = await apiClient.get(`/uat-tasks/${id}/revision-history`);
+    return response.data.data;
+  },
+
+  startRevision: async (id: string): Promise<UATTask> => {
+    const response = await apiClient.put(`/uat-tasks/${id}/start-revision`, {});
+    return response.data.data;
+  },
 };

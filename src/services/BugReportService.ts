@@ -4,6 +4,7 @@ import apiClient from "@/lib/ApiClient";
 import {
   BugReport,
   CreateBugReportData,
+  CreateBugRevisionData,
   UpdateBugReportData,
 } from "@/types/BugReport";
 
@@ -33,7 +34,8 @@ export const BugReportService = {
     return res.data.data;
   },
 
-  delete: async (id: string): Promise<void> => {
+  // Renamed from delete to deleteBugReport for clarity
+  deleteBugReport: async (id: string): Promise<void> => {
     await apiClient.delete(`/bug-reports/${id}`);
   },
   
@@ -43,6 +45,16 @@ export const BugReportService = {
         'Content-Type': 'multipart/form-data'
       }
     });
+    return res.data.data;
+  },
+
+  createRevision: async (bugId: string, data: CreateBugRevisionData): Promise<BugReport> => {
+    const res = await apiClient.post(`/bug-reports/${bugId}/revise`, data);
+    return res.data.data;
+  },
+
+  getBugHistory: async (bugId: string): Promise<any> => {
+    const res = await apiClient.get(`/bug-reports/${bugId}/history`);
     return res.data.data;
   }
 };

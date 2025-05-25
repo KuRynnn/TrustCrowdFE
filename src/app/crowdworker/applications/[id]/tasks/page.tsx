@@ -1,6 +1,5 @@
 // src/app/crowdworker/applications/[id]/tasks/page.tsx
 "use client";
-
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -9,7 +8,7 @@ import { useApplicationDetail } from '@/hooks/UseApplications';
 import { UATTask } from '@/types/UATTask';
 import CrowdworkerSidebar from '@/components/organisms/sidebar/CrowdworkerSidebar';
 import Link from 'next/link';
-import { CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, CheckSquare } from 'lucide-react';
 
 export default function ApplicationTasksPage() {
   const { id } = useParams();
@@ -39,7 +38,7 @@ export default function ApplicationTasksPage() {
       router.push('/login');
     }
   }, [user, authLoading, router]);
-
+  
   // Fetch application tasks
   useEffect(() => {
     const fetchApplicationTasks = async () => {
@@ -60,12 +59,11 @@ export default function ApplicationTasksPage() {
         setIsLoading(false);
       }
     };
-
     if (id && workerId) {
       fetchApplicationTasks();
     }
   }, [id, workerId]);
-
+  
   // Apply status filter
   useEffect(() => {
     if (statusFilter) {
@@ -74,19 +72,25 @@ export default function ApplicationTasksPage() {
       setFilteredTasks(tasks);
     }
   }, [tasks, statusFilter]);
-
+  
   // Calculate task counts by status
   const assignedCount = tasks.filter(task => task.status === 'Assigned').length;
   const inProgressCount = tasks.filter(task => task.status === 'In Progress').length;
   const completedCount = tasks.filter(task => task.status === 'Completed').length;
+  const verifiedCount = tasks.filter(task => task.status === 'Verified').length;
   const totalTasks = tasks.length;
+  
+  // Calculate progress percentage based on both completed and verified tasks
+  const finishedCount = completedCount + verifiedCount;
   const progressPercentage = totalTasks > 0 
-    ? Math.round((completedCount / totalTasks) * 100) 
+    ? Math.round((finishedCount / totalTasks) * 100) 
     : 0;
-
+  
   // Function to get task status icon
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'Verified':
+        return <CheckSquare size={18} className="text-green-500" />;
       case 'Completed':
         return <CheckCircle size={18} className="text-green-300" />;
       case 'In Progress':
@@ -97,7 +101,23 @@ export default function ApplicationTasksPage() {
         return null;
     }
   };
-
+  
+  // Function to get status style
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'Verified':
+        return 'bg-green-500/20 text-green-500';
+      case 'Completed':
+        return 'bg-green-500/20 text-green-300';
+      case 'In Progress':
+        return 'bg-yellow-500/20 text-yellow-300';
+      case 'Assigned':
+        return 'bg-blue-500/20 text-blue-300';
+      default:
+        return 'bg-gray-500/20 text-gray-300';
+    }
+  };
+  
   if (authLoading || isLoadingApp || (user?.role === 'crowdworker' && !workerId) || isLoading) {
     return (
       <div className="flex min-h-screen bg-[#0e0b1e]">
@@ -113,7 +133,7 @@ export default function ApplicationTasksPage() {
       </div>
     );
   }
-
+  
   if (!application) {
     return (
       <div className="flex min-h-screen bg-[#0e0b1e]">
@@ -135,7 +155,7 @@ export default function ApplicationTasksPage() {
       </div>
     );
   }
-
+  
   return (
     <div className="flex min-h-screen bg-[#0e0b1e]">
       {/* Sidebar */}
@@ -159,13 +179,13 @@ export default function ApplicationTasksPage() {
           </div>
           <p className="text-gray-400">Complete all test cases to finish testing this application</p>
         </div>
-
+        
         {error && (
           <div className="bg-red-500/20 text-red-300 p-4 rounded-md mb-6">
             <p>{error}</p>
           </div>
         )}
-
+        
         {/* Application Progress */}
         <div className="bg-[#001333] p-6 rounded-xl shadow-xl mb-6">
           <h2 className="text-lg font-semibold text-gray-200 mb-4">Testing Progress</h2>
@@ -180,7 +200,7 @@ export default function ApplicationTasksPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="bg-[#0a1e3b] p-3 rounded-md text-center">
               <p className="text-blue-300 mb-1">Assigned</p>
               <p className="text-2xl font-bold text-white">{assignedCount}</p>
@@ -193,9 +213,13 @@ export default function ApplicationTasksPage() {
               <p className="text-green-300 mb-1">Completed</p>
               <p className="text-2xl font-bold text-white">{completedCount}</p>
             </div>
+            <div className="bg-[#0a1e3b] p-3 rounded-md text-center">
+              <p className="text-green-500 mb-1">Verified</p>
+              <p className="text-2xl font-bold text-white">{verifiedCount}</p>
+            </div>
           </div>
         </div>
-
+        
         {/* Task Filters */}
         <div className="bg-[#001333] p-4 rounded-xl shadow-xl mb-6">
           <h2 className="text-lg font-semibold text-gray-200 mb-3">Filter Tasks</h2>
@@ -243,9 +267,20 @@ export default function ApplicationTasksPage() {
               <CheckCircle size={14} className="mr-1" />
               Completed ({completedCount})
             </button>
+            <button
+              onClick={() => setStatusFilter('Verified')}
+              className={`px-3 py-1 rounded-md text-sm flex items-center ${
+                statusFilter === 'Verified'
+                  ? 'bg-[#5460ff] text-white'
+                  : 'bg-[#0a1e3b] text-gray-300 hover:bg-[#0a1e3b]/80'
+              }`}
+            >
+              <CheckSquare size={14} className="mr-1" />
+              Verified ({verifiedCount})
+            </button>
           </div>
         </div>
-
+        
         {/* Task List */}
         {filteredTasks.length === 0 ? (
           <div className="bg-[#001333] p-8 rounded-xl shadow-xl text-center">
@@ -273,20 +308,16 @@ export default function ApplicationTasksPage() {
                       <h3 className="text-lg font-semibold text-white">
                         {task.test_case?.test_title || 'Unnamed Test Case'}
                       </h3>
-                      <span className={`px-2 py-0.5 rounded text-xs ${
-                        task.status === 'Completed' ? 'bg-green-500/20 text-green-300' :
-                        task.status === 'In Progress' ? 'bg-yellow-500/20 text-yellow-300' :
-                        'bg-blue-500/20 text-blue-300'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${getStatusStyle(task.status)}`}>
                         {task.status}
                       </span>
                     </div>
                     {task.test_case?.priority && (
                       <div className="mb-2">
                         <span className={`inline-block px-2 py-0.5 text-xs rounded ${
-                          task.test_case.priority === 'High' ? 'bg-red-500/20 text-red-300' :
-                          task.test_case.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' :
-                          'bg-blue-500/20 text-blue-300'
+                          task.test_case.priority === 'High' ? 'bg-red-500/30 text-red-200' :
+                          task.test_case.priority === 'Medium' ? 'bg-yellow-500/30 text-yellow-200' :
+                          'bg-blue-500/30 text-blue-200'
                         }`}>
                           {task.test_case.priority} Priority
                         </span>
@@ -303,12 +334,33 @@ export default function ApplicationTasksPage() {
                   </Link>
                 </div>
                 
-                {task.test_case?.test_steps && (
+                {/* GWT Preview - Show only the first part of the when_action */}
+                {task.test_case?.when_action && (
                   <div className="mb-3">
-                    <h4 className="text-gray-400 mb-1 text-sm">Test Steps:</h4>
-                    <p className="text-white text-sm bg-[#0a1e3b] p-3 rounded line-clamp-2 whitespace-pre-wrap">
-                      {task.test_case.test_steps}
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-16 h-6 bg-green-600/40 flex items-center justify-center rounded-md">
+                        <span className="text-green-200 font-medium text-xs">WHEN</span>
+                      </div>
+                      <h4 className="text-gray-400 text-sm">Actions:</h4>
+                    </div>
+                    <p className="text-white text-sm bg-[#0f1b35] p-3 rounded line-clamp-2 whitespace-pre-wrap">
+                      {task.test_case.when_action}
                     </p>
+                  </div>
+                )}
+                
+                {/* Task validation info */}
+                {task.status === 'Verified' && task.task_validation && (
+                  <div className="bg-green-500/10 p-2 rounded-md mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CheckSquare size={14} className="text-green-500" />
+                      <span className="text-green-400 text-sm">Verified by QA on {new Date(task.task_validation.validated_at).toLocaleDateString()}</span>
+                    </div>
+                    {task.task_validation.comments && (
+                      <p className="text-gray-300 text-sm ml-6">
+                        "{task.task_validation.comments}"
+                      </p>
+                    )}
                   </div>
                 )}
                 
@@ -316,14 +368,14 @@ export default function ApplicationTasksPage() {
                   <div className="flex gap-4 text-xs text-gray-400 mt-3">
                     <div>
                       <span className="block">Started:</span>
-                      <span className="text-gray-300">
+                      <span className="text-gray-300" suppressHydrationWarning>
                         {new Date(task.started_at).toLocaleDateString()} {new Date(task.started_at).toLocaleTimeString()}
                       </span>
                     </div>
                     {task.completed_at && (
                       <div>
                         <span className="block">Completed:</span>
-                        <span className="text-gray-300">
+                        <span className="text-gray-300" suppressHydrationWarning>
                           {new Date(task.completed_at).toLocaleDateString()} {new Date(task.completed_at).toLocaleTimeString()}
                         </span>
                       </div>
@@ -334,7 +386,7 @@ export default function ApplicationTasksPage() {
             ))}
           </div>
         )}
-
+        
         {/* Bottom Navigation */}
         <div className="mt-8 flex justify-between">
           <Link

@@ -1,11 +1,11 @@
 // src/components/applications/ApplicationForm.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { applicationService } from '@/services/ApplicationService';
 import { Application, CreateApplicationData, UpdateApplicationData } from '@/types/Application';
 import { useAuth } from '@/context/AuthContext';
+import { AlertCircle, Info } from 'lucide-react';
 
 interface ApplicationFormProps {
   initialData?: Application;
@@ -23,9 +23,10 @@ export default function ApplicationForm({ initialData, isEditing = false }: Appl
     platform: initialData?.platform || '',
     description: initialData?.description || '',
     client_id: initialData?.client?.client_id || (user?.role === 'client' ? user.client_id : ''),
-    status: initialData?.status || undefined
+    status: initialData?.status || undefined,
+    max_testers: initialData?.max_testers || 10
   });
-
+  
   // Update client_id when user changes
   useEffect(() => {
     if (user?.role === 'client' && !formData.client_id) {
@@ -39,8 +40,14 @@ export default function ApplicationForm({ initialData, isEditing = false }: Appl
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    
+    if (name === 'max_testers') {
+      const numValue = parseInt(value) || 0;
+      setFormData(prev => ({ ...prev, [name]: numValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     
     // Clear error for this field
     if (errors[name]) {
@@ -59,11 +66,11 @@ export default function ApplicationForm({ initialData, isEditing = false }: Appl
       newErrors.app_name = 'Application name is required';
     }
     
-    if (!formData.app_url.trim()) {
+    if (!(formData.app_url || '').trim()) {
       newErrors.app_url = 'Application URL is required';
-    } else if (!/^https?:\/\//.test(formData.app_url)) {
+    } else if (!/^https?:\/\//.test(formData.app_url || '')) {
       newErrors.app_url = 'URL must start with http:// or https://';
-    }
+    }    
     
     if (!formData.platform.trim()) {
       newErrors.platform = 'Platform is required';
@@ -73,15 +80,24 @@ export default function ApplicationForm({ initialData, isEditing = false }: Appl
       newErrors.client_id = 'Client ID is required';
     }
     
+    // Validate max_testers
+    if (formData.max_testers < 1) {
+      newErrors.max_testers = 'At least 1 tester must be allowed';
+    } else if (formData.max_testers > 100) {
+      newErrors.max_testers = 'Maximum 100 testers allowed';
+    }
+    
+    // Check if editing and trying to reduce below current workers
+    if (isEditing && initialData?.current_workers && formData.max_testers < initialData.current_workers) {
+      newErrors.max_testers = `Cannot set below ${initialData.current_workers} as there are already ${initialData.current_workers} testers working`;
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Debug: Check if token exists before creating application
-    console.log("Before creating application, token in localStorage:", localStorage.getItem("accessToken"));
     
     if (!validate()) return;
     
@@ -93,8 +109,6 @@ export default function ApplicationForm({ initialData, isEditing = false }: Appl
         await applicationService.updateApplication(initialData.app_id, formData as UpdateApplicationData);
       } else {
         // If creating a new application
-        const token = localStorage.getItem("accessToken");
-        console.log("Using token for create:", token ? token.substring(0, 10) + "..." : "NO TOKEN");
         await applicationService.createApplication(formData);
       }
       
@@ -177,6 +191,36 @@ export default function ApplicationForm({ initialData, isEditing = false }: Appl
         {errors.platform && (
           <p className="mt-1 text-sm text-red-500">{errors.platform}</p>
         )}
+      </div>
+      
+      <div>
+        <label htmlFor="max_testers" className="block text-sm font-medium text-gray-200">
+          Maximum Testers *
+        </label>
+        <div className="mt-1 relative">
+          <input
+            type="number"
+            id="max_testers"
+            name="max_testers"
+            value={formData.max_testers}
+            onChange={handleChange}
+            min="1"
+            max="100"
+            className="block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+          />
+          {isEditing && initialData?.current_workers !== undefined && (
+            <div className="mt-2 flex items-start gap-2 text-sm text-blue-300">
+              <Info size={16} className="mt-0.5 flex-shrink-0" />
+              <span>Currently {initialData.current_workers} tester{initialData.current_workers !== 1 ? 's' : ''} working on this application</span>
+            </div>
+          )}
+        </div>
+        {errors.max_testers && (
+          <p className="mt-1 text-sm text-red-500">{errors.max_testers}</p>
+        )}
+        <p className="mt-1 text-xs text-gray-400">
+          Set the maximum number of testers allowed to work on this application (1-100)
+        </p>
       </div>
       
       <div>

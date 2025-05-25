@@ -1,35 +1,45 @@
+// src/components/organisms/sidebar/QASpecialistSidebar.tsx
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Users, LogOut, ClipboardList, ListChecks, CheckSquare, ClipboardCheck, User } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
 export default function QASpecialistSidebar() {
-  const [activePath, setActivePath] = useState("/validator/validate-question");
+  const pathname = usePathname();
+  const [activePath, setActivePath] = useState("/qa-specialist/dashboard");
   const [loggingOut, setLoggingOut] = useState(false);
   const { logout } = useAuth();
-
+  
+  // Update active path when pathname changes
+  useEffect(() => {
+    if (pathname) {
+      setActivePath(pathname);
+    }
+  }, [pathname]);
+  
   const handleNavigate = (path: string) => {
     setActivePath(path);
   };
-
+  
   const handleLogout = () => {
     setLoggingOut(true);
     // Call the actual logout function
     logout();
   };
-
+  
   const isActive = (path: string) => activePath.includes(path);
-
+  
   return (
-    <aside className="bg-[#001333] h-screen text-white col-span-2 flex flex-col justify-between shadow-xl overflow-hidden">
+    <aside className="bg-[#001333] h-screen text-white col-span-2 flex flex-col justify-between shadow-xl overflow-y-auto fixed w-64">
       <div>
         <h2 className="text-2xl text-center font-bold mb-6 text-gray-200 p-4 mt-4">
           QA Specialist Panel
         </h2>
         <nav className="p-2">
           <ul className="space-y-2">
+            {/* Dashboard */}
             <li
               className={`text-sm bg-gradient-to-r p-4 rounded-lg ${
                 isActive("/qa-specialist/dashboard")
@@ -46,6 +56,8 @@ export default function QASpecialistSidebar() {
                 <span>Dashboard</span>
               </Link>
             </li>
+            
+            {/* Applications */}
             <li
               className={`text-sm bg-gradient-to-r p-4 rounded-lg ${
                 isActive("/qa-specialist/applications")
@@ -62,22 +74,8 @@ export default function QASpecialistSidebar() {
                 <span>Applications</span>
               </Link>
             </li>
-            <li
-              className={`text-sm bg-gradient-to-r p-4 rounded-lg ${
-                isActive("/qa-specialist/bug-validations")
-                  ? "border bg-[#5460ff] to-[#032054]"
-                  : ""
-              }`}
-            >
-              <Link
-                href="/qa-specialist/bug-validations"
-                onClick={() => handleNavigate("/qa-specialist/bug-validations")}
-                className="flex items-center gap-3 w-full text-gray-300 hover:text-white transition-all"
-              >
-                <CheckSquare size={20} />
-                <span>Bug Validations</span>
-              </Link>
-            </li>
+            
+            {/* Task Validations */}
             <li
               className={`text-sm bg-gradient-to-r p-4 rounded-lg ${
                 isActive("/qa-specialist/task-validations")
@@ -94,6 +92,8 @@ export default function QASpecialistSidebar() {
                 <span>Task Validations</span>
               </Link>
             </li>
+            
+            {/* Profile */}
             <li
               className={`text-sm bg-gradient-to-r p-4 rounded-lg ${
                 isActive("/qa-specialist/profile")
@@ -113,13 +113,14 @@ export default function QASpecialistSidebar() {
           </ul>
         </nav>
       </div>
-      <div className="p-2">
+      
+      <div className="pb-4 px-2 mt-auto">
         <button
           onClick={handleLogout}
           className={`w-full py-3 flex items-center justify-center gap-2 text-lg font-semibold rounded-lg shadow-md transition-all duration-300 ${
             loggingOut
               ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-[#5460ff] to-[#032054] text-white"
+              : "bg-[#0a1e5e] hover:bg-[#0a1e5e]/25 text-white"
           }`}
           disabled={loggingOut}
         >

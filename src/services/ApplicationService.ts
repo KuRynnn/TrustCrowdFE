@@ -7,12 +7,12 @@ export const applicationService = {
     const response = await apiClient.get('/applications');
     return response.data.data;
   },
-
+  
   getApplicationById: async (id: string): Promise<Application> => {
     const response = await apiClient.get(`/applications/${id}`);
     return response.data.data;
   },
-
+  
   getApplicationsByClient: async (clientId: string): Promise<Application[]> => {
     try {
       // Validate clientId before making the request
@@ -29,12 +29,12 @@ export const applicationService = {
       return [];
     }
   },
-
+  
   getApplicationsByPlatform: async (platform: string): Promise<Application[]> => {
     const response = await apiClient.get(`/applications/platform/${platform}`);
     return response.data.data;
   },
-
+  
   createApplication: async (data: CreateApplicationData): Promise<Application> => {
     // Ensure client_id is included in the request
     if (!data.client_id) {
@@ -44,21 +44,21 @@ export const applicationService = {
     const response = await apiClient.post('/applications', data);
     return response.data.data;
   },
-
+  
   updateApplication: async (id: string, data: UpdateApplicationData): Promise<Application> => {
     const response = await apiClient.put(`/applications/${id}`, data);
     return response.data.data;
   },
-
+  
   deleteApplication: async (id: string): Promise<void> => {
     await apiClient.delete(`/applications/${id}`);
   },
-
+  
   updateApplicationStatus: async (id: string, status: string): Promise<Application> => {
     const response = await apiClient.patch(`/applications/${id}/status`, { status });
     return response.data.data;
   },
-
+  
   getApplicationStatistics: async (id: string): Promise<ApplicationStatistics> => {
     try {
       const response = await apiClient.get(`/applications/${id}/statistics`);
@@ -67,30 +67,19 @@ export const applicationService = {
       console.error(`Error fetching statistics for application ${id}:`, error);
       // Return a default statistics object to prevent UI errors
       return {
-        total_bug_reports: 0,
-        critical_bugs: 0,
-        validated_bugs: 0,
-        total_testers: 0,
-        total_tasks: 0,
-        completed_tasks: 0,
-        in_progress_tasks: 0,
-        pending_validation: 0,
-        total_bugs: 0,
-        bugs_by_severity: {
-          Critical: 0,
-          High: 0,
-          Medium: 0,
-          Low: 0
-        },
-        bugs_by_status: {
-          Valid: 0,
-          Invalid: 0,
-          Pending: 0
+        test_case_statistics: [],
+        summary: {
+          total_bugs: 0,
+          critical_bugs: 0,
+          valid_bugs: 0,
+          invalid_bugs: 0,
+          pending_validation: 0,
+          total_test_cases: 0
         }
       };
     }
   },
-
+  
   getApplicationProgress: async (id: string): Promise<ApplicationProgress> => {
     try {
       const response = await apiClient.get(`/applications/${id}/progress`);
@@ -104,7 +93,6 @@ export const applicationService = {
         completed_test_cases: 0,
         in_progress_test_cases: 0,
         not_started_test_cases: 0,
-        progress_percentage: 0,
         total_bugs: 0,
         valid_bugs: 0,
         completed_tasks: 0,
@@ -116,7 +104,7 @@ export const applicationService = {
       };
     }
   },
-
+  
   getAvailableForCrowdworker: async (workerId: string): Promise<Application[]> => {
     // Ensure worker_id is included in the request
     if (!workerId) {
@@ -141,6 +129,13 @@ export const applicationService = {
     }
     
     const response = await apiClient.post(`/applications/${id}/pick`, { worker_id: workerId });
+    return response.data.data;
+  },
+  
+  getApplicationProgressForWorker: async (appId: string, workerId: string): Promise<ApplicationProgress> => {
+    const response = await apiClient.get(`/applications/${appId}/progress`, {
+      params: { worker_id: workerId }
+    });
     return response.data.data;
   }
 };
