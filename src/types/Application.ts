@@ -11,13 +11,12 @@ export interface Application {
   description?: string;
   status: 'pending' | 'active' | 'Ready for Testing' | 'completed' | 'on-hold';
   max_testers: number;
+  current_workers?: number;
   created_at: string;
   updated_at?: string;
-  client?: Partial<ClientUser>;  // Using Partial since API might not return all fields
+  client?: Partial<ClientUser>;
   test_cases?: TestCase[];
   test_cases_count?: number;
-  current_workers?: number;
-  max_workers?: number;  // This can be removed as we're using max_testers instead
 }
 
 export interface CreateApplicationData {
